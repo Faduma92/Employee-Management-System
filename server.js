@@ -330,13 +330,13 @@ function addNewEmployee() {
             type: 'input',
             name: 'firstName',
             message: 'What is the employee\'s first name?',
-            validate: fieldValidation
+            
         },
         {
             type: 'input',
             name: 'lastName',
             message: 'What is the employee\'s last name?',
-            validate: fieldValidation
+           
         },
         {
             type: 'list',
@@ -428,7 +428,7 @@ function addRole() {
                             type: 'input',
                             name: 'roleName',
                             message: 'What would you like to call this role?',
-                            validate: fieldValidation    
+                           
                         },
                         {
                             type: 'input',
@@ -470,7 +470,7 @@ function addDepartment() {
             type: 'input',
             name: 'departmentName',
             message: 'What would you like to name this department?',
-            validate: fieldValidation
+            
          })
          .then(function(answer) {
             console.clear();
