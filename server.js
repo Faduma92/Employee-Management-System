@@ -491,3 +491,248 @@ function addDepartment() {
          });
     }
 }
+
+// UPDATE EMPLOYEE ROLES function
+
+function update() {
+    // Variables needed for the function
+    var updateChoice = [];
+    var newUpdateChoice = [];
+    var roleChoicesArr = [];
+    var arrayChoice;
+    var promptMessage;
+
+
+    connection.query(
+        'SELECT * FROM role',
+
+        function(error, results) {
+            if (error) throw error;
+
+            results.forEach(role => {
+                var roleChoices = {
+                    name: role.title,
+                    value: {
+                        id: role.id,
+                        name: role.title
+                    }
+                }
+
+                roleChoicesArr.push(roleChoices);
+            });
+        }
+    );
+    // This is the main query
+    connection.query(
+        `SELECT employee.*, role.title, role.department_id
+         FROM employee
+         INNER JOIN role 
+           ON (employee.role_id = role.id)`,
+
+        function(err, res) {
+            if (err) throw err;
+
+            // Loop through all of the employee's in the database
+            res.forEach(employee => {
+              let name = `${employee.first_name} ${employee.last_name}, id: ${employee.id}`;
+              
+              // Add all the values into the updateChoice array  
+              let updateChoiceVal = {
+                name: name,
+                value: {
+                    name: name,
+                    first_name: employee.first_name,
+                    name_without_id: `${employee.first_name} ${employee.last_name}`,
+                    id: employee.id
+                }
+              }
+
+              updateChoice.push(updateChoiceVal);
+            });
+
+            // Always give the user the option to cancel
+            updateChoice.push('Cancel');
+
+            // First inquirer question to see which employee they'd like to update
+            inquirer
+             .prompt({
+                type: 'list',
+                name: 'userChoice',
+                message: 'Which employee would you like to update?',
+                choices: updateChoice
+             })
+             .then(function(answer) {
+                //  If the user chose to cancel then clear the console and go back to the main screen
+                if (answer.userChoice === 'Cancel') {
+                    console.clear();
+
+                    init();
+                }
+
+                // If the user chose to update the employee's role
+                else {
+                    promptMessage = `Which position would you like ${answer.userChoice.first_name} to have?`;
+
+                    arrayChoice = roleChoicesArr;
+
+                    secondUpdateQuestion();
+                }
+
+
+                
+                function secondUpdateQuestion() {
+                    inquirer
+                     .prompt({
+                        type: 'list',
+                        name: 'userSecondChoice',
+                        message: promptMessage,
+                        choices: arrayChoice
+                     })
+                     .then(function(choice) {
+
+                        var settingChoice = [
+                            {
+                                id: answer.userChoice.id
+                            }
+                        ];
+
+                        
+                            settingChoice.unshift({
+                                role_id: choice.userSecondChoice.id
+                            });
+                        
+
+                        // Connection query to update the employee role or manager
+                        connection.query(
+                            `UPDATE employee SET ? WHERE ?`,
+
+                            settingChoice,
+
+                            function (err, res) {
+                                if (err) throw err;
+
+                                console.clear();
+
+                                
+                                    console.log(`${answer.userChoice.first_name}'s position has been updated to ${choice.userSecondChoice.name}!\n`);
+                                
+
+                                init();
+                            }
+                        );
+                    });
+                }
+             });
+        }
+    );
+}
+
+//Remove function
+function remove() {
+    console.clear();
+
+    // First query to run. This will grab all the details from either the employee table, department table, or the role table.
+    connection.query(
+        `SELECT * FROM ${removeVal}`,
+
+        function (err, res) {
+            if (err) throw err;
+
+            
+            var choiceArr = [];
+            var choiceVal;
+
+            // Depending on what the useS choice:
+
+            // If the user chose to remove an Employee
+            if (removeVal === 'employee') {
+                res.forEach(employee => {
+                    choiceVal = {
+                        name: `${employee.first_name} ${employee.last_name}, id: ${employee.id}`,
+                        value: {
+                            id: employee.id,
+                            name: `${employee.first_name} ${employee.last_name}`
+                        }
+                    }
+
+                    choiceArr.push(choiceVal);
+                });
+            } 
+            
+            // If the user choice to remove a department
+            else if (removeVal === 'department') {
+                res.forEach(department => {
+                    choiceVal = {
+                        name: department.name,
+                        value: {
+                            id: department.id,
+                            name: department.name
+                        }
+                    }
+
+                    choiceArr.push(choiceVal);
+                });
+            }
+
+            // If the user chose to remove a role
+            else {
+                res.forEach(role => {
+                    choiceVal = {
+                        name: role.title,
+                        value: {
+                            id: role.id,
+                            name: role.title
+                        }
+                    }
+
+                    choiceArr.push(choiceVal);
+                });
+            }
+
+            // No matter which forEach loop runs, always give the user the option to cancel.
+            choiceArr.push('Cancel');
+
+            // First inquirer prompt to ask the user which employee, department, or role they'd like to remove.
+            inquirer
+             .prompt({
+                type: 'list',
+                name: 'removeChoice',
+                message: `Which ${removeVal} would you like to remove?`,
+                choices: choiceArr
+             })
+             .then(function(answer) {
+                // If the user chose to cancel, clear the console and got back to the main screen.
+                if (answer.removeChoice === 'Cancel') {
+                    console.clear();
+
+                    init();
+                } 
+                
+                else {
+                   
+                            connection.query(
+                                `DELETE FROM ${removeVal} WHERE ?`,
+
+                                {
+                                    id: answer.removeChoice.id
+                                },
+
+
+                                // Print what has been removed
+                                function(error, results) {
+                                    if (error) throw error;
+
+                                    console.clear();
+
+                                    console.log(`${answer.removeChoice.name} has been removed from the ${removeVal} database!\n`);
+
+                                    init();
+                                }
+                            );
+                        
+                     
+                }
+             })
+        }
+    );
+}
